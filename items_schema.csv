@@ -1,0 +1,12 @@
+Field,Type,Null,Key,Default,Extra
+id_lk,varchar(50),NO,,NULL,
+id_sc,varchar(50),YES,,NULL,
+name,varchar(500),NO,,NULL,
+image,varchar(300),YES,,NULL,
+unit,varchar(100),NO,,NULL,
+amt,int,YES,,NULL,
+hsn,varchar(12),YES,,NULL,
+gst,int,YES,,NULL,
+sku,varchar(100),YES,,NULL,
+description,text,YES,,NULL,
+internal_migration_id,"int unsigned",NO,PRI,NULL,auto_increment

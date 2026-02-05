@@ -1,0 +1,30 @@
+# Environment and secrets (keep .env.example tracked)
+.env
+
+# SSL certificate (project-specific, do not commit)
+ca-certificate.crt
+*.crt
+
+# Local SQLite database (produced by clone_database.py)
+local_quotation.db
+*.db
+
+# Vectors cache (produced by load_vectors_to_memory.py)
+vectors_cache.pkl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
