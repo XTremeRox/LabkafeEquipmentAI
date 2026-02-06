@@ -61,15 +61,16 @@ def connect_sqlite():
         raise
 
 
-def fetch_items_without_vectors(conn: sqlite3.Connection) -> List[Tuple[str, str]]:
+def fetch_items_without_vectors(conn: sqlite3.Connection, overwrite: Optional[bool] = None) -> List[Tuple[str, str]]:
     """
     Fetch all items that need vectors.
-    If OVERWRITE_EXISTING is True, fetches all items. Otherwise, only items without vectors.
+    If overwrite/OVERWRITE_EXISTING is True, fetches all items. Otherwise, only items without vectors.
     Returns list of tuples: (sku, name)
     """
     cursor = conn.cursor()
-    
-    if OVERWRITE_EXISTING:
+    use_overwrite = overwrite if overwrite is not None else OVERWRITE_EXISTING
+
+    if use_overwrite:
         # Fetch all items with valid SKU (will overwrite existing vectors)
         cursor.execute("""
             SELECT sku, name 
@@ -255,20 +256,24 @@ def process_batch_worker(
             conn.close()
 
 
-def main():
-    """Main function to orchestrate the embedding generation process with parallel processing"""
+def run_generate_vectors(overwrite: Optional[bool] = None):
+    """
+    Generate embeddings for items in the local SQLite database.
+    Callable from other scripts (e.g. 1_setup.py, 2_update_items.py).
+    overwrite: If True, regenerate all vectors. If False, only items without vectors. None = use env.
+    """
     try:
         # Initialize OpenAI API key
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
             raise ValueError("OPENAI_API_KEY not found in environment variables")
-        
+
         # Connect to database (main connection for fetching items)
         conn = connect_sqlite()
-        
+
         try:
             # Fetch all items needing embeddings
-            items = fetch_items_without_vectors(conn)
+            items = fetch_items_without_vectors(conn, overwrite=overwrite)
             
             if not items:
                 logger.info("No items need embeddings. All items are up to date.")
@@ -293,7 +298,8 @@ def main():
             logger.info(f"Total items: {total_items}")
             logger.info(f"Batch size: {BATCH_SIZE}")
             logger.info(f"Total batches: {total_batches}")
-            logger.info(f"Overwrite existing vectors: {OVERWRITE_EXISTING}")
+            use_overwrite = overwrite if overwrite is not None else OVERWRITE_EXISTING
+            logger.info(f"Overwrite existing vectors: {use_overwrite}")
             logger.info("=" * 60)
             
             # Process batches in parallel using ThreadPoolExecutor
@@ -344,6 +350,11 @@ def main():
     except Exception as e:
         logger.error(f"Fatal error in main: {e}")
         raise
+
+
+def main():
+    """Main function - uses OVERWRITE_EXISTING from environment"""
+    run_generate_vectors(overwrite=None)
 
 
 if __name__ == "__main__":

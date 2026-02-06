@@ -24,7 +24,7 @@ Clients send requirements in various formats (e.g., "Test Tube 10ml"). Our catal
 Every requirement line is scored using a weighted average:
 1. **Historical Mapping (70% weight):** A `sku_mapping_history` table stores how often a specific requirement string was matched to a specific SKU in the past.
 2. **Vector Similarity (30% weight):** Semantic similarity between the requirement text and the `items` catalog using embeddings.
-
+ 
 **Final Score Formula:** $Score = (History\_Freq\_Normalized \times 0.7) + (Vector\_Similarity \times 0.3)$
 
 ## Efficiency & Automation Strategy
@@ -43,22 +43,23 @@ Whenever a quotation is finalized in the PHP UI, the final SKU selections are se
 
 ## Producing the local database and vectors
 
-The matching system uses a local SQLite database and a precomputed vector cache. To create them:
+The matching system uses a local SQLite database and a precomputed vector cache.
 
-1. **Local database (`local_quotation.db`):** Clone from MySQL (see [SETUP.md](SETUP.md) §3):
-   ```bash
-   python scripts/clone_database.py
-   ```
-2. **Vectors in DB:** Generate embeddings for items (see [SETUP.md](SETUP.md) §5):
-   ```bash
-   python scripts/generate_vectors.py
-   ```
-3. **Vector cache (`vectors_cache.pkl`):** Load vectors into cache for fast API startup (see [SETUP.md](SETUP.md) §6):
-   ```bash
-   python scripts/load_vectors_to_memory.py
-   ```
+**Recommended:** Run the interactive sync script:
 
-Full details, prerequisites, and optional steps (SKU mapping history, etc.) are in **[SETUP.md](SETUP.md)**.
+```bash
+python scripts/sync.py
+```
+
+This presents a menu:
+- **Setup new** – Remove existing local data, full clone from MySQL, generate vectors, build cache
+- **Update** – Sync only new items from MySQL, compute vectors for new items, rebuild cache
+
+**Direct usage** (for automation or scripts):
+- First-time setup: `python scripts/1_setup.py`
+- Incremental update: `python scripts/2_update_items.py`
+
+Full details, prerequisites, and optional steps are in **[SETUP.md](SETUP.md)**.
 
 ## Project Structure
 - `/api`: FastAPI backend for OCR, Embedding, and Scoring logic.

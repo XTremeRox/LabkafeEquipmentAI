@@ -131,39 +131,35 @@ def load_cache() -> Tuple[np.ndarray, List[str], List[str]]:
         raise ValueError("Cache file uses old format. Please regenerate vectors cache.")
 
 
-def main():
-    """Main function to load vectors and create cache"""
+def run_rebuild_cache():
+    """
+    Load vectors from SQLite and rebuild vectors_cache.pkl.
+    Callable from other scripts (e.g. 1_setup.py, 2_update_items.py).
+    """
     conn = None
     try:
-        # Connect to SQLite
         conn = connect_sqlite()
-        
-        # Load items and vectors
+
         logger.info("=" * 60)
         logger.info("Loading items and vectors from database...")
         logger.info("=" * 60)
-        
+
         vectors, item_skus, item_names = load_items_and_vectors(conn)
-        
+
         if len(item_skus) == 0:
-            logger.error("No vectors found. Please run generate_vectors.py first.")
-            return
-        
-        # Save cache
+            raise ValueError("No vectors found. Please run generate_vectors.py first.")
+
         logger.info("=" * 60)
         logger.info("Saving vectors cache...")
         logger.info("=" * 60)
-        
+
         save_cache(vectors, item_skus, item_names)
-        
+
         logger.info("=" * 60)
-        logger.info("Vector loading complete!")
+        logger.info("Vector cache rebuild complete!")
         logger.info(f"Ready to use {len(item_skus)} items for matching")
         logger.info("=" * 60)
-        
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
-        raise
+
     finally:
         if conn:
             conn.close()
@@ -178,6 +174,15 @@ def connect_sqlite():
         return conn
     except Exception as e:
         logger.error(f"Failed to connect to SQLite database: {e}")
+        raise
+
+
+def main():
+    """Main function to load vectors and create cache"""
+    try:
+        run_rebuild_cache()
+    except Exception as e:
+        logger.error(f"Fatal error: {e}")
         raise
 
 

@@ -1,6 +1,21 @@
 # Setup Guide
 
-To produce the **local database** (`local_quotation.db`) and **vector cache** (`vectors_cache.pkl`), complete **steps 3, 5, and 6** below (clone DB → generate vectors → load cache).
+To produce the **local database** (`local_quotation.db`) and **vector cache** (`vectors_cache.pkl`), run the interactive sync script (recommended) or follow the manual steps below.
+
+## Recommended: Interactive Sync Script
+
+Run:
+
+```bash
+python scripts/sync.py
+```
+
+You will see a menu:
+- **[1] Setup new** – Deletes existing local DB and cache (with confirmation), then clones MySQL, creates SKU mapping history, generates vectors, and builds the cache. Use for first-time setup or a full reset.
+- **[2] Update** – Syncs only new items from MySQL, generates vectors for new items, and rebuilds the cache. Use when new items have been added to the remote database. Does **not** touch `tables_data`.
+- **[3] Exit** – Quit without changes.
+
+After running **Update**, restart the API so it loads the new cache.
 
 ## Prerequisites
 
@@ -101,6 +116,23 @@ This will:
 - Enable sub-millisecond vector matching
 
 **Note:** This cache file is loaded when the API starts. Regenerate it if you add new items or update vectors.
+
+### Incremental Updates
+
+When new items are added to the MySQL database, run **Update** from the sync script (`python scripts/sync.py` → option 2) or directly:
+
+```bash
+python scripts/2_update_items.py
+```
+
+This will:
+1. Connect to MySQL and local SQLite
+2. Fetch items where `internal_migration_id` > max local
+3. Insert new rows into local `items`
+4. Generate vectors only for items without vectors
+5. Rebuild `vectors_cache.pkl`
+
+**Important:** Restart the API after running the update so it loads the new cache.
 
 ### 7. Start FastAPI Server
 

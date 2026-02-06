@@ -184,57 +184,54 @@ def add_vector_column(sqlite_conn):
             raise
 
 
-def main():
-    """Main function to orchestrate the database cloning process"""
+def run_clone():
+    """
+    Clone MySQL database (items + tables_data) to local SQLite.
+    Callable from other scripts (e.g. 1_setup.py).
+    """
     mysql_conn = None
     sqlite_conn = None
-    
+
     try:
         # Connect to MySQL
         mysql_conn = connect_mysql()
-        
+
         # Connect to SQLite (create if doesn't exist)
         sqlite_conn = sqlite3.connect(LOCAL_DB_PATH)
         logger.info(f"Connected to SQLite database: {LOCAL_DB_PATH}")
-        
+
         # Clone items table
         logger.info("=" * 60)
         logger.info("Cloning items table...")
         logger.info("=" * 60)
-        
+
         # Get schema and create table
         items_schema = get_table_schema(mysql_conn, 'items')
-        create_sqlite_table(sqlite_conn, 'items', items_schema, primary_key='id')
-        
+        create_sqlite_table(sqlite_conn, 'items', items_schema, primary_key='internal_migration_id')
+
         # Clone data
         clone_table(mysql_conn, sqlite_conn, 'items')
-        
+
         # Add name_vector column
         add_vector_column(sqlite_conn)
-        
+
         # Clone tables_data table
         logger.info("=" * 60)
         logger.info("Cloning tables_data table...")
         logger.info("=" * 60)
-        
+
         # Get schema and create table
         tables_data_schema = get_table_schema(mysql_conn, 'tables_data')
         create_sqlite_table(sqlite_conn, 'tables_data', tables_data_schema)
-        
+
         # Clone data
         clone_table(mysql_conn, sqlite_conn, 'tables_data')
-        
+
         logger.info("=" * 60)
         logger.info("Database cloning complete!")
         logger.info(f"Local database saved at: {LOCAL_DB_PATH}")
         logger.info("=" * 60)
-        logger.info("")
-        logger.info("NEXT STEPS:")
-        logger.info("1. Run: python scripts/create_sku_mapping_history.py")
-        logger.info("2. Run: python scripts/generate_vectors.py  (REQUIRED - generates embeddings)")
-        logger.info("3. Run: python scripts/load_vectors_to_memory.py  (REQUIRED - creates cache)")
-        logger.info("=" * 60)
-        
+
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         raise
@@ -245,6 +242,17 @@ def main():
         if sqlite_conn:
             sqlite_conn.close()
             logger.info("SQLite connection closed")
+
+
+def main():
+    """Main function to orchestrate the database cloning process"""
+    run_clone()
+    logger.info("")
+    logger.info("NEXT STEPS:")
+    logger.info("1. Run: python scripts/create_sku_mapping_history.py")
+    logger.info("2. Run: python scripts/generate_vectors.py  (REQUIRED - generates embeddings)")
+    logger.info("3. Run: python scripts/load_vectors_to_memory.py  (REQUIRED - creates cache)")
+    logger.info("=" * 60)
 
 
 if __name__ == "__main__":
